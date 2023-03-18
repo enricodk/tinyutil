@@ -37,7 +37,9 @@ const jsFetchRedirect = "js.fetch:redirect"
 // the browser globals.
 var jsFetchMissing = js.Global().Get("fetch").IsUndefined()
 
-type Transport struct{}
+type Transport struct {
+	Binding js.Value
+}
 
 // RoundTrip implements the RoundTripper interface using the WHATWG Fetch API.
 func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -92,7 +94,8 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 	}
 
-	fetchPromise := js.Global().Call("fetch", req.URL.String(), opt)
+	fetchReq := js.Global().Get("Request").New(req.URL.String(), opt)
+	fetchPromise := t.Binding.Call("fetch", fetchReq)
 	var (
 		respCh           = make(chan *http.Response, 1)
 		errCh            = make(chan error, 1)
